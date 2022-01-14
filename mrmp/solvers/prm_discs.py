@@ -10,7 +10,7 @@ import networkx as nx
 import random
 import time
 import math
-import conversions
+from mrmp import conversions
 import sum_distances
 import bounding_box
 
