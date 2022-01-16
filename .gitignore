@@ -1,2 +1,6 @@
 rmp.egg-info
-bindings/*
+bindings/
+bindings/CGALPY.egg-info/
+__pycache__/
+/.idea
+rmp.egg-info/
