@@ -1,5 +1,6 @@
-import sys
 import os.path
+import sys
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 import sklearn.neighbors
@@ -11,11 +12,12 @@ import random
 import time
 import math
 from mrmp import conversions
-import sum_distances
-import bounding_box
+from mrmp.solvers import sum_distances
+from mrmp.solvers import bounding_box
 
 # Number of nearest neighbors to search for in the k-d tree
 K = 15
+
 
 # generate_path() is our main PRM function
 # it constructs a PRM (probabilistic roadmap)
@@ -31,19 +33,20 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
     except Exception as e:
         print("argument is not an integer", file=writer)
         return path
-    print("num_landmarks=", num_landmarks, file=writer)
+    print("num_landmarks=", num_landmarks)
     num_robots = len(robots)
-    print("num_robots=", num_robots, file=writer)
+    print("num_robots=", num_robots)
     # for technical reasons related to the way the python bindings for this project were generated, we need
     # the condition "(dim / num_robots) >= 2" to hold
     if num_robots == 0:
-        print("unsupported number of robots:", num_robots, file=writer)
+        print("unsupported number of robots:", num_robots)
         return path
     # compute the free C-space of a single robot by expanding the obstacles by the disc robot radius
     # and maintaining a representation of the complement of the expanded obstacles
     sources = [robot['center'] for robot in robots]
     radii = [robot['radius'] for robot in robots]
-    collision_detectors = [collision_detection.Collision_detector(obstacles, disc_obstacles, radius) for radius in radii]
+    collision_detectors = [collision_detection.Collision_detector(obstacles, disc_obstacles, radius) for radius in
+                           radii]
     min_x, max_x, min_y, max_y = bounding_box.calc_bbox(obstacles, sources, destinations, max(radii))
 
     # turn the start position of the robots (the array robots) into a d-dim point, d = 2 * num_robots
@@ -56,8 +59,7 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
     points = [sources, destinations]
     # we also add these two configurations as nodes to the PRM G
     G.add_nodes_from([sources, destinations])
-    print('Sampling landmarks', file=writer)
-
+    print('Sampling landmarks')
 
     ######################
     # Sampling landmarks
@@ -67,12 +69,13 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
             print("Aborted", file=writer)
             return path, G
 
-        p = sample_valid_landmark(min_x, max_x, min_y, max_y, collision_detectors, num_robots, radii)
+        p = sample_valid_landmark(min_x, max_x, min_y, max_y, collision_detectors, num_robots, radii,
+                                  robots[0]['center'], robots[1]['center'], destinations)
         G.add_node(p)
         points.append(p)
         if i % 500 == 0:
-            print(i, "landmarks sampled", file=writer)
-    print(num_landmarks, "landmarks sampled", file=writer)
+            print(i, "landmarks sampled")
+    print(num_landmarks, "landmarks sampled")
 
     ### !!!
     # Distnace functions
@@ -82,7 +85,6 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
 
     _points = np.array([point_d_to_arr(p) for p in points])
 
-
     ########################
     # Constract the roadmap
     ########################
@@ -90,7 +92,7 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
     kdt = sklearn.neighbors.NearestNeighbors(n_neighbors=K, metric=custom_dist, algorithm='auto')
     # kdt = sklearn.neighbors.NearestNeighbors(n_neighbors=K, algorithm='kd_tree')
     kdt.fit(_points)
-    print('Connecting landmarks', file=writer)
+    print('Connecting landmarks')
     for i in range(len(points)):
         if not isRunning[0]:
             print("Aborted", file=writer)
@@ -110,8 +112,7 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
                     d = distance.transformed_distance(p, neighbor).to_double()
                     G.add_edge(p, neighbor, weight=d)
         if i % 500 == 0:
-            print('Connected', i, 'landmarks to their nearest neighbors', file=writer)
-
+            print('Connected', i, 'landmarks to their nearest neighbors')
 
     ########################
     # Finding a valid path
@@ -127,15 +128,15 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
                     dx = p[2 * j].to_double() - q[2 * j].to_double()
                     dy = p[2 * j + 1].to_double() - q[2 * j + 1].to_double()
                     lengths[j] += math.sqrt((dx * dx + dy * dy))
-        print("A path of length", sum(lengths), "was found", file=writer)
+        print("A path of length", sum(lengths), "was found")
         for i in range(num_robots):
-            print('Length traveled by robot', i, ":", lengths[i], file=writer)
+            print('Length traveled by robot', i, ":", lengths[i])
         for p in temp:
             path.append(conversions.to_point_2_list(p, num_robots))
     else:
-        print("No path was found", file=writer)
+        print("No path was found")
     t1 = time.perf_counter()
-    print("Time taken:", t1 - t0, "seconds", file=writer)
+    print("Time taken:", t1 - t0, "seconds")
     return path, G
 
 
@@ -144,8 +145,12 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
 def point_d_to_arr(p: Point_d):
     return [p[i].to_double() for i in range(p.dimension())]
 
+
 # find one free landmark (milestone) within the bounding box
-def sample_valid_landmark(min_x, max_x, min_y, max_y, collision_detectors, num_robots, radii):
+def sample_valid_landmark(min_x, max_x, min_y, max_y, collision_detectors, num_robots, radii, first_robot, second_robot,
+                          destinations):
+    first_distance = distance(first_robot, Point_2(point_d_to_arr(destinations)[0], point_d_to_arr(destinations)[1]))
+    second_distance = distance(second_robot, Point_2(point_d_to_arr(destinations)[2], point_d_to_arr(destinations)[3]))
     while True:
         points = []
         # for each robot check that its configuration (point) is in the free space
@@ -153,13 +158,19 @@ def sample_valid_landmark(min_x, max_x, min_y, max_y, collision_detectors, num_r
             rand_x = FT(random.uniform(min_x, max_x))
             rand_y = FT(random.uniform(min_y, max_y))
             p = Point_2(rand_x, rand_y)
-            if collision_detectors[i].is_point_valid(p):
+            if collision_detectors[i].is_point_valid(p) and (distance(first_robot, p) < first_distance
+                                                             or distance(second_robot, p) < second_distance):
                 points.append(p)
             else:
                 break
         # verify that the robots do not collide with one another at the sampled configuration
         if len(points) == num_robots and not collision_detection.check_intersection_static(points, radii):
             return conversions.to_point_d(points)
+
+
+def distance(first, second):
+    return math.sqrt((second[0].to_double() - first[0].to_double()) ** 2 + (
+                    second[1].to_double() - first[1].to_double()) ** 2)
 
 
 # check whether the edge pq is collision free

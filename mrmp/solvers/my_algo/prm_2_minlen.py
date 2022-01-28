@@ -1,5 +1,6 @@
-import sys
 import os.path
+import sys
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 import sklearn.neighbors
@@ -10,12 +11,15 @@ import networkx as nx
 import random
 import time
 import math
-from mrmp import conversions
-import sum_distances
-import bounding_box
+import mrmp.conversions as conversions
+from mrmp.solvers import sum_distances
+from mrmp.solvers import bounding_box
+
+from mrmp.solvers.my_algo import local_prm_discs
 
 # Number of nearest neighbors to search for in the k-d tree
 K = 15
+
 
 # generate_path() is our main PRM function
 # it constructs a PRM (probabilistic roadmap)
@@ -28,7 +32,7 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
     path = []
     try:
         num_landmarks = int(argument)
-    except Exception as e:
+    except Exception as total_error_saved:
         print("argument is not an integer", file=writer)
         return path
     print("num_landmarks=", num_landmarks, file=writer)
@@ -43,7 +47,8 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
     # and maintaining a representation of the complement of the expanded obstacles
     sources = [robot['center'] for robot in robots]
     radii = [robot['radius'] for robot in robots]
-    collision_detectors = [collision_detection.Collision_detector(obstacles, disc_obstacles, radius) for radius in radii]
+    collision_detectors = [collision_detection.Collision_detector(obstacles, disc_obstacles, radius) for radius in
+                           radii]
     min_x, max_x, min_y, max_y = bounding_box.calc_bbox(obstacles, sources, destinations, max(radii))
 
     # turn the start position of the robots (the array robots) into a d-dim point, d = 2 * num_robots
@@ -57,7 +62,6 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
     # we also add these two configurations as nodes to the PRM G
     G.add_nodes_from([sources, destinations])
     print('Sampling landmarks', file=writer)
-
 
     ######################
     # Sampling landmarks
@@ -81,7 +85,6 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
     custom_dist = sum_distances.numpy_sum_distance_for_n(num_robots)
 
     _points = np.array([point_d_to_arr(p) for p in points])
-
 
     ########################
     # Constract the roadmap
@@ -112,7 +115,6 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
         if i % 500 == 0:
             print('Connected', i, 'landmarks to their nearest neighbors', file=writer)
 
-
     ########################
     # Finding a valid path
     ########################
@@ -134,15 +136,159 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
             path.append(conversions.to_point_2_list(p, num_robots))
     else:
         print("No path was found", file=writer)
+
+    """
+    *** OUR CODE ***
+    """
+    print("*** RUNNING OUR IMPROVING CODE ***", file=writer)
+    if len(path) < 3:
+        return path, G
+
+    # Trying to delete vertices to make the path smaller
+    prev_length = 0
+    new_length = -1
+    new_path = path
+    while new_length < prev_length:
+        prev_length = len(new_path)
+        new_path = remove_vertices_from_path(new_path, collision_detectors, num_robots, radii)
+        new_length = len(new_path)
+
+    CHUNK_SIZE = 4
+    rounds = len(new_path) // CHUNK_SIZE + 1
+    last_round_size = len(new_path) % CHUNK_SIZE
+    if last_round_size == 0:
+        last_round_size = CHUNK_SIZE
+        rounds -= 1
+
+    current_path_index = 0  # index which tells us where we are at the path
+    final_path = []
+    round_num = 0
+    while round_num < rounds:
+        # On each round we pass over a sub-path of path of length CHUNK_SIZE or less
+        round_num += 1
+
+        if round_num < rounds:
+            current_sub_path = new_path[current_path_index:current_path_index+CHUNK_SIZE]
+        else:
+            # last round
+            current_sub_path = new_path[current_path_index:current_path_index + last_round_size]
+
+        if len(current_sub_path) == 1:
+            final_path.append(current_sub_path[0])
+            continue
+        elif not current_sub_path:
+            continue
+
+        sub_path_length = calculate_length_from_start_to_end(current_sub_path)
+
+        # improving only the first path
+        first_fake_robot = {"center": current_sub_path[0][0], "radius": robots[0]["radius"]}
+        second_fake_robot = {"center": current_sub_path[0][1], "radius": robots[1]["radius"]}
+
+        src = conversions.to_point_d([current_sub_path[0][0], current_sub_path[0][1]])
+        dst = conversions.to_point_d([current_sub_path[-1][0], current_sub_path[-1][1]])
+        if edge_valid(collision_detectors,
+                      src,
+                      dst,
+                      num_robots, radii):
+            # just add the edge and continue to the next sub-path
+            final_path.append(conversions.to_point_2_list(src, num_robots))
+            final_path.append(conversions.to_point_2_list(dst, num_robots))
+            current_path_index += CHUNK_SIZE
+            continue
+        # calling to our local prm
+        best_path, _ = local_prm_discs.generate_path_disc(
+            [first_fake_robot, second_fake_robot], obstacles, disc_obstacles,
+            [current_sub_path[-1][0], current_sub_path[-1][1]], 100, writer, isRunning
+        )
+
+        if best_path == [] or calculate_length_from_start_to_end(best_path) >= sub_path_length:
+            if round_num == rounds:
+                # last round
+                x = last_round_size
+            else:
+                x = CHUNK_SIZE
+            for _ in range(x):
+                final_path.append(new_path[current_path_index])
+                current_path_index += 1
+        else:
+            for i in range(len(best_path)):
+                final_path.append(best_path[i])
+
+            current_path_index += CHUNK_SIZE
+
+    # Trying to delete vertices to make the path smaller
+    prev_length = 0
+    new_length = -1
+    while new_length < prev_length:
+        prev_length = len(final_path)
+        final_path = remove_vertices_from_path(final_path, collision_detectors, num_robots, radii)
+        new_length = len(final_path)
+
+    # now we have our final path, we will build the final graph
+    final_G = nx.Graph()
+    for i in range(len(final_path) - 1):
+        final_G.add_node(conversions.to_point_d(final_path[i]))
+        final_G.add_node(conversions.to_point_d(final_path[i+1]))
+        final_G.add_edge(conversions.to_point_d(final_path[i]),
+                         conversions.to_point_d(final_path[i+1]))
+
+    final_path_length = calculate_length_from_start_to_end(final_path)
+    origin_prm_path_length = calculate_length_from_start_to_end(path)
+    error_saved = origin_prm_path_length - final_path_length
+
+    print("*** RESULTS ***")
+    print(f"final total length is {final_path_length}", file=writer)
+    print(f"Saved {error_saved} of total path length regarding to the basic prm,"
+          f" which are {error_saved/origin_prm_path_length * 100}%", file=writer)
+
     t1 = time.perf_counter()
     print("Time taken:", t1 - t0, "seconds", file=writer)
-    return path, G
+
+    return final_path, final_G
+
+
+def remove_vertices_from_path(path, collision_detectors, num_robots, radii):
+    faster_path = [path[0]]
+    for i in range(0, len(path) - 2, 2):
+        if edge_valid(collision_detectors, conversions.to_point_d(path[i]),
+                      conversions.to_point_d(path[i + 2]),
+                      num_robots, radii):
+            pass
+        else:
+            faster_path.append(path[i + 1])
+        faster_path.append(path[i + 2])
+
+    if len(path) % 2 == 0:
+        faster_path.append(path[-1])
+
+    return faster_path
+
+
+def calculate_length_from_start_to_end(path):
+    path_length = 0
+    for i in range(len(path) - 1):
+        first_edge_length = math.sqrt(
+            (path[i][0][0].to_double() - path[i + 1][0][0].to_double()) ** 2
+            + (path[i][0][1].to_double() - path[i + 1][0][1].to_double()) ** 2
+        )
+
+        second_edge_length = math.sqrt(
+            (path[i][1][0].to_double() - path[i + 1][1][0].to_double()) ** 2
+            + (path[i][1][1].to_double() - path[i + 1][1][1].to_double()) ** 2
+        )
+
+        path_length += first_edge_length
+        path_length += second_edge_length
+
+    return path_length
 
 
 # throughout the code, wherever we need to return a number of type double to CGAL,
 # we convert it using FT() (which stands for field number type)
 def point_d_to_arr(p: Point_d):
     return [p[i].to_double() for i in range(p.dimension())]
+
 
 # find one free landmark (milestone) within the bounding box
 def sample_valid_landmark(min_x, max_x, min_y, max_y, collision_detectors, num_robots, radii):
