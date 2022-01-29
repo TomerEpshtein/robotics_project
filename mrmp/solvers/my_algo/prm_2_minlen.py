@@ -30,8 +30,13 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
     ###################
     t0 = time.perf_counter()
     path = []
+    chunk_size = 4
     try:
-        num_landmarks = int(argument)
+        argument_params = argument.split(",")
+        if len(argument_params) == 1:
+            num_landmarks = int(argument_params[0])
+        elif len(argument_params) == 2:
+            num_landmarks, chunk_size = int(argument_params[0]), int(argument_params[1])
     except Exception as total_error_saved:
         print("argument is not an integer", file=writer)
         return path
@@ -153,22 +158,21 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
         new_path = remove_vertices_from_path(new_path, collision_detectors, num_robots, radii)
         new_length = len(new_path)
 
-    CHUNK_SIZE = 4
-    rounds = len(new_path) // CHUNK_SIZE + 1
-    last_round_size = len(new_path) % CHUNK_SIZE
+    rounds = len(new_path) // chunk_size + 1
+    last_round_size = len(new_path) % chunk_size
     if last_round_size == 0:
-        last_round_size = CHUNK_SIZE
+        last_round_size = chunk_size
         rounds -= 1
 
     current_path_index = 0  # index which tells us where we are at the path
     final_path = []
     round_num = 0
     while round_num < rounds:
-        # On each round we pass over a sub-path of path of length CHUNK_SIZE or less
+        # On each round we pass over a sub-path of path of length chunk_size or less
         round_num += 1
 
         if round_num < rounds:
-            current_sub_path = new_path[current_path_index:current_path_index+CHUNK_SIZE]
+            current_sub_path = new_path[current_path_index:current_path_index+chunk_size]
         else:
             # last round
             current_sub_path = new_path[current_path_index:current_path_index + last_round_size]
@@ -194,7 +198,7 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
             # just add the edge and continue to the next sub-path
             final_path.append(conversions.to_point_2_list(src, num_robots))
             final_path.append(conversions.to_point_2_list(dst, num_robots))
-            current_path_index += CHUNK_SIZE
+            current_path_index += chunk_size
             continue
         # calling to our local prm
         best_path, _ = local_prm_discs.generate_path_disc(
@@ -207,7 +211,7 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
                 # last round
                 x = last_round_size
             else:
-                x = CHUNK_SIZE
+                x = chunk_size
             for _ in range(x):
                 final_path.append(new_path[current_path_index])
                 current_path_index += 1
@@ -215,7 +219,7 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
             for i in range(len(best_path)):
                 final_path.append(best_path[i])
 
-            current_path_index += CHUNK_SIZE
+            current_path_index += chunk_size
 
     # Trying to delete vertices to make the path smaller
     prev_length = 0
@@ -238,7 +242,7 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
     error_saved = origin_prm_path_length - final_path_length
 
     print("*** RESULTS ***")
-    print(f"final total length is {final_path_length}", file=writer)
+    print(f"final total length is \n{final_path_length}", file=writer)
     print(f"Saved {error_saved} of total path length regarding to the basic prm,"
           f" which are {error_saved/origin_prm_path_length * 100}%", file=writer)
 

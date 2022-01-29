@@ -3,9 +3,9 @@ from datetime import datetime
 from bindings import *
 from geometry_utils import collision_detection
 from mrmp.conversions import to_point_2_list
-from mrmp.solvers.rrt_start.nearest_point_search import NearestPointSearch
-from mrmp.solvers.rrt_start.random_points_in_polygon_generator import PointsGenerator
-from mrmp.solvers.rrt_start.rrt_star import RrtStar
+from mrmp.solvers.rrt_star.nearest_point_search import NearestPointSearch
+from mrmp.solvers.rrt_star.random_points_in_polygon_generator import PointsGenerator
+from mrmp.solvers.rrt_star.rrt_star import RrtStar
 
 STEP_SIZE_VALUE = 1
 STEP_SIZE = FT(Gmpq(STEP_SIZE_VALUE))
