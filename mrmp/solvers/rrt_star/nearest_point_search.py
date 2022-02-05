@@ -1,78 +1,80 @@
 import math
 
-import numpy as np
-import sklearn.neighbors
-
 from bindings import *
 
 
 class NearestPointSearch:
 
-    def __init__(self, num_robots, radius=FT(3)):
+    def __init__(self, initial_points, num_closest=1, epsilon=FT(Gmpq(0)), radius=FT(7), num_max_neighborhood=10):
+        self.num_max_neighborhood = num_max_neighborhood
         self.radius = radius
-        self.num_robots = num_robots
-        self.custom_dist = numpy_sum_distance_for_n(num_robots)
-        self.mapping = []
+        self.initial_points = initial_points
+        self.epsilon = epsilon
+        self.k = num_closest
+        self.tree = Kd_tree(self.initial_points)
+        self.small_tree = Kd_tree([])
+        self.small_tree_num_points = 0
+        self.points = set(initial_points)
 
     def get_closest_point(self, point):
-        """
-        Returns the closes node to point by the self.custom_dict metric
-        """
-        kdt = sklearn.neighbors.NearestNeighbors(n_neighbors=1, metric=self.custom_dist, algorithm='auto')
-        _points_nd = np.array([p[0] for p in self.mapping])
-        kdt.fit(_points_nd)
-        dist, k_neighbors = kdt.kneighbors([self.point_d_to_arr(point, 2 * self.num_robots)])
-        index_of_closest_point = k_neighbors[0][0]
-        # return the closest point as (Point_d, the distance)
-        return self.mapping[index_of_closest_point][1], dist[0][0]
+        search = K_neighbor_search(self.tree, point, self.k, self.epsilon, True, Euclidean_distance(),
+                                   True)
+        closest_points = []
+        search.k_neighbors(closest_points)
+
+        small_search = K_neighbor_search(self.small_tree, point, self.k, self.epsilon, True, Euclidean_distance(),
+                                         True)
+        small_closest_points = []
+        small_search.k_neighbors(small_closest_points)
+        if closest_points == [] or (self.small_tree_num_points != 0 and small_closest_points[0][1] < closest_points[0][1]):
+            return small_closest_points[0][0], small_closest_points[0][1].to_double()**0.5
+        else:
+            return closest_points[0][0], closest_points[0][1].to_double()**0.5
 
     def get_distance(self, p1, p2):
-        if type(p1) == Point_d:
-            p1 = self.point_d_to_arr(p1, 2 * self.num_robots)
-        if type(p2) == Point_d:
-            p2 = self.point_d_to_arr(p2, 2 * self.num_robots)
-
-        return FT(self.custom_dist(p1, p2))
+        tree = Kd_tree([p1])
+        search = K_neighbor_search(tree, p2, 1, self.epsilon, True, Euclidean_distance(),
+                                   True)
+        closest_points = []
+        search.k_neighbors(closest_points)
+        _, squared_distance = closest_points[0]
+        distance = FT(squared_distance.to_double() ** 0.5)
+        return distance
 
     def get_neighborhood(self, point):
-        """
-        Returns all the points which are in the distance of self.radius from point
-        """
-        _points_nd = np.array([p[0] for p in self.mapping])
-        euclid_dist_func = numpy_sum_distance_for_n(self.num_robots, euclid=True)
-        return [self.mapping[i][1] for i in range(len(_points_nd))
-                if euclid_dist_func(_points_nd[i], np.array(self.point_d_to_arr(point, 2 * self.num_robots)))
-                < self.radius.to_double()]
+        search = K_neighbor_search(self.tree, point, self.num_max_neighborhood, self.epsilon, True,
+                                   Euclidean_distance(),
+                                   True)
+        closest_points = []
+        search.k_neighbors(closest_points)
+        closest_points = [c_point for c_point in closest_points if c_point[1] < self.radius * self.radius]
+        if self.small_tree_num_points == 0:
+            return closest_points
+        small_closest_points = []
+        small_search = K_neighbor_search(self.small_tree, point, self.num_max_neighborhood, self.epsilon, True,
+                                         Euclidean_distance(),
+                                         True)
+        small_search.k_neighbors(small_closest_points)
+        small_closest_points = [c_point for c_point in small_closest_points if c_point[1] < self.radius * self.radius]
+
+        def _merge(arr, arr2):
+            points = arr + arr2
+            points.sort(key=lambda item: item[1])
+            return points[:self.num_max_neighborhood]
+
+        closest_points = _merge(closest_points, small_closest_points)
+        return closest_points
 
     def add_point(self, point):
         """
-        Adding a new point as pair of two representations of it: by np array and by Point_d
+        :param point: Point_2
+        :return: does not return
         """
-        point_nd = np.array(self.point_d_to_arr(point, 2 * self.num_robots))
-        self.mapping.append([point_nd, point])
-
-    @staticmethod
-    def point_d_to_arr(p: Point_d, d):
-        """
-        Converts Point_d to array
-        """
-        return [p[i].to_double() for i in range(d)]
-
-
-def numpy_sum_distance_for_n(n, euclid=False):
-    def path_distance(p, q):
-        sum_of_distances = 0
-        for i in range(n):
-            dx = p[2 * i] - q[2 * i]
-            dy = p[2 * i + 1] - q[2 * i + 1]
-            sum_of_distances += math.sqrt(dx * dx + dy * dy)
-        return sum_of_distances
-
-    def euclid_distance(p, q):
-        s = 0
-        for i in range(2*n):
-            dx = p[i] - q[i]
-            s += dx * dx
-        return math.sqrt(s)
-
-    return euclid_distance if euclid else path_distance
+        if point not in self.points:
+            self.points.add(point)
+            self.small_tree.insert(point)
+            self.small_tree_num_points += 1
+            if len(self.points) % 100 == 0:
+                self.tree = Kd_tree(list(self.points))
+                self.small_tree = Kd_tree([])
+                self.small_tree_num_points = 0
