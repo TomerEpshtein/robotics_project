@@ -139,6 +139,9 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
             print('Length traveled by robot', i, ":", lengths[i], file=writer)
         for p in temp:
             path.append(conversions.to_point_2_list(p, num_robots))
+
+        print(sum(lengths))
+        print("printed our result")
     else:
         print("No path was found", file=writer)
 
