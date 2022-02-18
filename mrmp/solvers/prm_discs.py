@@ -1,3 +1,4 @@
+import json
 import sys
 import os.path
 sys.path.insert(0, os.path.dirname(__file__))
@@ -136,6 +137,8 @@ def generate_path_disc(robots, obstacles, disc_obstacles, destinations, argument
         print("No path was found", file=writer)
     t1 = time.perf_counter()
     print("Time taken:", t1 - t0, "seconds", file=writer)
+    print(json.dumps([[p[0][0].to_double(), p[0][1].to_double(),
+                       p[1][0].to_double(), p[1][1].to_double()] for p in path]))
     return path, G
 
 
