@@ -67,7 +67,7 @@ class RrtStar:
                         print(f"added {i} nodes")
                     x_min = x_near
                     c_min = self.cost[x_near] + steer_distance
-                    for x_near in x_near_neighbors:
+                    for x_near, _ in x_near_neighbors:
                         if self.edge_valid(x_near, x_new):
                             if self.cost[x_near] + self.nearest_point_search.get_distance(x_near, x_new) < c_min:
                                 c_min = self.cost[x_near] + self.nearest_point_search.get_distance(x_near, x_new)
@@ -77,7 +77,7 @@ class RrtStar:
                     self.parents[x_new] = x_min
                     self.cost[x_new] = c_min
 
-                    for x_near in x_near_neighbors:
+                    for x_near, _ in x_near_neighbors:
                         if self.edge_valid(x_near, x_new):
                             if self.cost[x_new] + self.nearest_point_search.get_distance(x_near, x_new) < self.cost[x_near]:
                                 self._update_edges_of_x_near(x_near, x_new)
