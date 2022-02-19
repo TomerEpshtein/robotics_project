@@ -15,7 +15,7 @@ which you can always look at
 in order to see all the differences between 
 the base version and my version.
 
-#### RRT*
+### RRT*
 
 I implemented the RRT* star algorithm.
 The implementation is in the path mrmp/solvers/rrt_star/ .
@@ -37,7 +37,17 @@ to RRT* solver which I'll explain about:
    it uses the previous files in order to calculate
     the path.
 
-#### My extension to PRM
+---
+**Running**
+
+You should select the scene you want to run RRT* about.
+Then you should select the <em>solver.py</em> as the planner file.
+No parameters should be given to this solver.
+
+
+---
+
+### My extension to PRM
 
 I implemented an extension to the PRM discs algorithm.
 The implementation is in the path mrmp/solvers/my_algo .
@@ -49,8 +59,58 @@ which I'll explain about:
 2. <em>prm_2_minlen.py</em> -<br/>
     This file is used in order to run my extension.
 
-#### Scenes
+---
+**Running**
+
+You should select the scene you want to run the extension about.
+Then you should select the <em>prm_2_minlen.py</em> as the planner file.
+
+You must give parameter of how many *landmarks* the algorithm will create.
+These must be a positive number, e.g. 300.
+<br/>If you pass only the number of *landmarks*, then the default *chunk_size*
+will be used is 4.
+
+If you want to use other *chunk_size*, you should pass the parameter like:
+<br/>
+<center>num_landmarks,chunk_size</center>
+
+For example 300,5 means that the number of
+*landmarks* will be 300
+and *chunk_size* will be 5.
+
+---
+
+### Scenes
 
 Under the mrmp/scenes folder which was already exists,
 I added 100 scenes files which I created and called them
-1.json, 2.json, ... , 100.json .
+<em>1.json, 2.json, ... , 100.json</em>.
+
+### Experiment files
+
+All these files are in the root directory of the project. 
+
+#### Script files
+
+The main scripts I used for the experiments are:
+
+1. <em>experiment_main.py</em> -<br />
+   In this file I ran all the scenes I created with
+    the algorithms with each parameter.
+
+2. <em>results_analyzer.py</em> -<br />
+    I used this script to analyze all the results
+    I've got from the previous script.
+
+#### Result files
+
+The following files was created by the <em>experiment_main.py</em>
+script:
+
+1. <em>results.csv</em> - <br/>
+   Contains all the lengths of the paths for each
+    scene + algorithm + parameter (if exists one).
+2. <em>times.csv</em> -<br/>
+   Contains all the running times of the runs for each
+    scene + algorithm + parameter (if exists one).
+
