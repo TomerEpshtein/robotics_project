@@ -7,7 +7,7 @@ In this file the following documentations will be given:
 
 ## My code in the project
 
-My work was based on the DiscoPygal we've got from the
+My work was based on the DiscoPygal package we've got from the
 course's staff at assignment 4.<br />
 There exists a pull request in the repo
 which you can always look at
@@ -18,7 +18,8 @@ the base version and my version.
 ### RRT*
 
 I implemented the RRT* star algorithm.
-The implementation is in the path mrmp/solvers/rrt_star/ .
+The implementation is in the path
+[mrmp/solvers/rrt_star/](https://github.com/TomerEpshtein/robotics_project/tree/master/mrmp/solvers/rrt_star).
 Under this folder there exists all the relevant files
 to RRT* solver which I'll explain about:
 
@@ -50,8 +51,9 @@ No parameters should be given to this solver.
 ### My extension to PRM
 
 I implemented an extension to the PRM discs algorithm.
-The implementation is in the path mrmp/solvers/my_algo .
- this folder there exists the relevant files
+The implementation is in the path
+[mrmp/solvers/my_algo](https://github.com/TomerEpshtein/robotics_project/tree/master/mrmp/solvers/my_algo).
+ Under this folder there exists the relevant files
 which I'll explain about:
 
 1. <em>local_prm_discs.py</em> -<br />
@@ -65,16 +67,16 @@ which I'll explain about:
 You should select the scene you want to run the extension about.
 Then you should select the <em>prm_2_minlen.py</em> as the planner file.
 
-You must give parameter of how many *landmarks* the algorithm will create.
-These must be a positive number, e.g. 300.
-<br/>If you pass only the number of *landmarks*, then the default *chunk_size*
+You must give a parameter of how many *landmarks* the algorithm will create.
+It must be a positive number, e.g. 300.
+<br/>If you only pass the number of *landmarks*, then the default *chunk_size*
 will be used is 4.
 
 If you want to use other *chunk_size*, you should pass the parameter like:
 <br/>
 <p align="center">num_landmarks,chunk_size</p>
 
-For example 300,5 means that the number of
+For example if you pass 300,5 then it means that the number of
 *landmarks* will be 300
 and *chunk_size* will be 5.
 
@@ -82,7 +84,7 @@ and *chunk_size* will be 5.
 
 ### Scenes
 
-Under the mrmp/scenes folder which was already exists,
+Under the [mrmp/scenes](https://github.com/TomerEpshtein/robotics_project/tree/master/mrmp/scenes) folder which was already exists,
 I added 100 scenes files which I created and called them
 <em>1.json, 2.json, ... , 100.json</em>.
 
