@@ -3,6 +3,7 @@ Organize all the features and also the chunk_size in the same csv
 """
 import csv
 import os
+import pathlib
 
 
 def get_best_result(row):
@@ -11,7 +12,7 @@ def get_best_result(row):
     return min_index + 3
 
 
-working_directory = "C:\\Users\\eps\\Desktop\\epshtein\\project\\git"
+working_directory = pathlib.Path(__file__).parent.parent.parent.resolve().__str__()
 all_rows = []
 with open(os.path.join(working_directory, 'data_science', "features", "all_features.csv"), "r") as csvfile:
     rows = csv.reader(csvfile)
