@@ -22,17 +22,17 @@ The implementation is in the path mrmp/solvers/rrt_star/ .
 Under this folder there exists all the relevant files
 to RRT* solver which I'll explain about:
 
-1. <em/>random_points_in_polygon_generator.py -<br />
+1. <em>random_points_in_polygon_generator.py<em> -<br />
     In this file the responsibility for generating 
    points in the room is implemented.
-2. <em/>nearest_point_search.py -<br/>
+2. <em>nearest_point_search.py<em> -<br/>
     In this file the responsibility for finding 
    nearest neighbors in RRT* is implemented.
-3. <em/>rrt_star.py -<br />
+3. <em>rrt_star.py<em> -<br />
     In this file the RRT* algorithm is implemented.<br />
     As you can see, in the method *get_path* in the file, 
    the pseudo-code of RRT* is implemented.
-4. <em/>solver.py-<br/>
+4. <em>solver.py<em> -<br/>
    This file is used in order to run the RRT*,
    it uses the previous files in order to calculate
     the path.
@@ -44,9 +44,9 @@ The implementation is in the path mrmp/solvers/my_algo .
  this folder there exists the relevant files
 which I'll explain about:
 
-1. <em/>local_prm_discs.py -<br />
+1. <em>local_prm_discs.py<em> -<br />
    This file contains the local prm algorithm implementation.
-2. <em/>prm_2_minlen.py -<br/>
+2. <em>prm_2_minlen.py<em> -<br/>
     This file is used in order to run my extension.
 
 #### Scenes
