@@ -116,3 +116,31 @@ script:
    Contains all the running times of the runs for each
     scene + algorithm + parameter (if exists one).
 
+### Data Science
+
+These files are located under the [data_science](https://github.com/TomerEpshtein/robotics_project/tree/master/data_science)
+folder.
+
+#### Features
+
+With the following files I created the features to use in the model:
+
+1. <em>features.py</em> -<br/>
+    Creates all the features except those which related to prm.
+2. <em>prm_features.py</em> -<br/>
+    Creates the prm features.
+
+All the features are located at the file <em>all_features.csv</em>.
+
+#### Model
+
+The files used to build the model:
+
+1. <em>data.py</em> -<br />
+   Merges the whole features we created for each scene with our targets
+   for each scene (the best chunk_size from our experiments).
+2. <em>data.csv</em> -<br />
+   Contains the actual data with the features and targets which
+   our model works on.
+3. <em>model.py</em> -<br />
+   Contains the relevant code for the model
