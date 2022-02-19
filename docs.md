@@ -72,7 +72,7 @@ will be used is 4.
 
 If you want to use other *chunk_size*, you should pass the parameter like:
 <br/>
-<center>num_landmarks,chunk_size</center>
+<p align="center">num_landmarks,chunk_size</p>
 
 For example 300,5 means that the number of
 *landmarks* will be 300
