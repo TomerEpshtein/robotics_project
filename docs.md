@@ -1,6 +1,6 @@
 # About
 
-In this file the following documentations will be given:
+The following documentations will be given here:
 
 * Explanation of the code I wrote in the project
 * How to run the code I wrote in the project
@@ -17,11 +17,10 @@ the base version and my version.
 
 ### RRT*
 
-I implemented the RRT* star algorithm.
+I implemented the RRT* algorithm.
 The implementation is in the path
 [mrmp/solvers/rrt_star/](https://github.com/TomerEpshtein/robotics_project/tree/master/mrmp/solvers/rrt_star).
-Under this folder there exists all the relevant files
-to RRT* solver which I'll explain about:
+This folder contains the following files:
 
 1. <em>random_points_in_polygon_generator.py</em> -<br />
     In this file the responsibility for generating 
@@ -42,7 +41,7 @@ to RRT* solver which I'll explain about:
 **Running**
 
 You should select the scene you want to run RRT* about.
-Then you should select the <em>solver.py</em> as the planner file.
+<br />Then you should select the <em>solver.py</em> as the planner file.
 No parameters should be given to this solver.
 
 
@@ -53,13 +52,13 @@ No parameters should be given to this solver.
 I implemented an extension to the PRM discs algorithm.
 The implementation is in the path
 [mrmp/solvers/my_algo](https://github.com/TomerEpshtein/robotics_project/tree/master/mrmp/solvers/my_algo).
- Under this folder there exists the relevant files
-which I'll explain about:
+This folder contains the following files:
 
 1. <em>local_prm_discs.py</em> -<br />
    This file contains the local prm algorithm implementation.
 2. <em>prm_2_minlen.py</em> -<br/>
-    This file is used in order to run my extension.
+    This file contains the extended algorithm; and it is used in order to run 
+   the algorithm.
 
 ---
 **Running**
@@ -70,7 +69,7 @@ Then you should select the <em>prm_2_minlen.py</em> as the planner file.
 You must give a parameter of how many *landmarks* the algorithm will create.
 It must be a positive number, e.g. 300.
 <br/>If you only pass the number of *landmarks*, then the default *chunk_size*
-will be used is 4.
+which will be used is 4.
 
 If you want to use other *chunk_size*, you should pass the parameter like:
 <br/>
@@ -143,4 +142,4 @@ The files used to build the model:
    Contains the actual data with the features and targets which
    our model works on.
 3. <em>model.py</em> -<br />
-   Contains the relevant code for the model
+   Contains the relevant code which used to create the model.
