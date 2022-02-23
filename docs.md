@@ -9,11 +9,6 @@ The following documentations will be given here:
 
 My work was based on the DiscoPygal package we've got from the
 course's staff at assignment 4.<br />
-There exists a pull request in the repo
-which you can always look at
-([pull request](https://github.com/TomerEpshtein/robotics_project/pull/1))
-in order to see all the differences between 
-the base version and my version.
 
 ### RRT*
 
